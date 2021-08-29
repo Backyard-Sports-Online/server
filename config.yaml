@@ -1,0 +1,6 @@
+# Process cores to fork the network processes
+cores: 4
+
+network:
+  host: 0.0.0.0
+  port: 9130

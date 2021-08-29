@@ -1,0 +1,25 @@
+{
+  "name": "byonline-server",
+  "version": "1.0.0",
+  "description": "Server code for Backyard Sports Online",
+  "main": "run.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Backyard-Sports-Online/server.git"
+  },
+  "author": "Backyard Sports Online",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Backyard-Sports-Online/server/issues"
+  },
+  "homepage": "https://github.com/Backyard-Sports-Online/server#readme",
+  "dependencies": {
+    "bent": "^7.3.12",
+    "ioredis": "^4.27.7",
+    "js-yaml": "^4.1.0",
+    "logging": "^3.3.0"
+  }
+}
