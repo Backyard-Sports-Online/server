@@ -32,7 +32,8 @@ class WebAPI {
     }
 
     async setIcon(userId, icon) {
-        const response = await this.post('/set_icon', {userId: userId,
+        const response = await this.post('/set_icon', {token: this.token,
+                                                      userId: userId,
                                                       icon: icon});
         if (response.error) {
             this.logger.error("Failed to set icon!", { response });
