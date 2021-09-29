@@ -27,6 +27,7 @@ if (cluster.isMaster) {
     // Worker
     const NetworkListener = require('./net/NetworkListener');
     const Redis = require('./database/Redis');
+    const Discord = require('./discord/Discord');
 
     global.server = new NetworkListener(config['network'])
     global.redis = new Redis(credientals['redis']);
@@ -42,6 +43,10 @@ if (cluster.isMaster) {
     require('./net/AreaMessages.js');
     require('./net/ChallengeMessages.js');
     require('./net/SessionMessages.js');
+
+    if (process.env.FIRST_WORKER && credientals.discord) {
+      global.discord = new Discord(credientals['discord']);
+    }
 
     // Handle messages from other processes.
     process.on('message', (message) => {
