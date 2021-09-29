@@ -8,6 +8,8 @@ class Discord {
   constructor(config) {
     this.logger = createLogger("Discord");
 
+    this.sentOffline = false;
+
     this.client = new Client({intents: [Intents.FLAGS.GUILDS]});
     this.client.once('ready', async () => {
       this.logger.info("Connected.");
@@ -84,12 +86,18 @@ class Discord {
         embed.addField("Backyard Football", footballUsers);
     }
 
-    if (this.lastMessageId) {
-      const message = await this.channel.messages.fetch(this.lastMessageId)
-      await message.edit({ embeds: [embed] });
-    } else {
-      const message = await this.channel.send({ embeds: [embed] });
-      this.lastMessageId = message.id;
+    if ((!usersOnline && !this.sentOffline) || usersOnline) {
+      if (this.lastMessageId) {
+        const message = await this.channel.messages.fetch(this.lastMessageId)
+        await message.edit({ embeds: [embed] });
+      } else {
+        const message = await this.channel.send({ embeds: [embed] });
+        this.lastMessageId = message.id;
+      }
+      if (!usersOnline)
+        this.sentOffline = true;
+      else
+        this.sentOffline = false;
     }
   }
 }
