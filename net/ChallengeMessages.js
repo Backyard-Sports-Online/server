@@ -76,6 +76,50 @@ process.on('receive_challenge', async (args) => {
     }
 });
 
+server.handleMessage('challenge_timeout', async (client, args) => {
+  const userId = args.user;
+  if (userId === undefined) {
+      logger.error("Missing user argument on challenge_timeout!");
+      return;
+  } else if (client.areaId == 0) {
+      logger.error(`Got challenge_timeout but I'm (${client.userId}) not in an area!`);
+      return;
+  }
+
+  // Check if the opponent is in our area.
+  const users = await redis.getUserIdsInArea(client.areaId, client.game);
+  if (!users.includes(userId)) {
+      logger.error(`Got challenge_timeout but our player (${userId}) isn't in area (${client.areaId})!`);
+      return;
+  }
+
+  process.send({cmd: "challenge_timeout", user: userId,
+                                          opponent: client.userId});
+});
+
+process.on('challenge_timeout', async (args) => {
+    const userId = args.user;
+    const opponentId = args.opponent;
+
+    for (const client of server.connections) {
+        if (client.userId == userId) {
+            if (client.areaId == 0) {
+                logger.error(`Got challenge_timeout from server but I'm (${client.userId}) not in an area!`);
+                return;
+            }
+
+            // Check if the opponent is in our area.
+            const users = await redis.getUserIdsInArea(client.areaId, client.game);
+            if (!users.includes(opponentId)) {
+                logger.error(`Got challenge_timeout but our player (${opponentId}) isn't in area (${client.areaId})!`);
+                return;
+            }
+            client.send("decline_challenge", {not_responding: 1});
+            return;
+        }
+    }
+});
+
 server.handleMessage('receiver_busy', async (client,args) => {
     const userId = args.user;
 
