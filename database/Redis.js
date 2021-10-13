@@ -41,7 +41,11 @@ class Redis {
 
     async getUserById(userId, game) {
         const response = await this.redis.hgetall(`byonline:users:${userId}`);
-        let stats;
+        if (response === {}) {
+            this.logger.warn(`User ${userId} not found in Redis!`);
+            return {};
+        }
+	let stats;
         if (database == this) {
             stats = (game == 'football' ? response['f_stats'] : response['b_stats']);
         } else {
@@ -113,6 +117,8 @@ class Redis {
         if (database != this) {
             // We need the name to clear the nameToId from.
             const user = await this.getUserById(userId, game);
+            if (user === {})
+                return;
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
@@ -142,8 +148,8 @@ class Redis {
         const users = [];
         for (const userId of usersList) {
             const user = await this.getUserById(userId);
-            // If the user's in the game, skip them out.
-            if (user.inGame)
+            // If the user doesn't exist or in a game, skip them out.
+            if (user === {} || user.inGame)
                 continue;
             users.push(user);
         }

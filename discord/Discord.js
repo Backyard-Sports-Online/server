@@ -42,7 +42,7 @@ class Discord {
     const userIds = Object.values(await redis.redis.hgetall("byonline:users:nameToId")).map(Number);
     for (const userId of userIds) {
       const user = await redis.getUserById(userId);
-      if (!user.game)
+      if (user === {} || !user.game)
         // Not logged in.
         continue;
 

@@ -70,6 +70,10 @@ process.on('receive_challenge', async (args) => {
             }
 
             const userData = await redis.getUserById(opponentId);
+            if (userData === {}) {
+                logger.error(`Got receive_challenge but our player (${opponentId}) doesn't exist!`);
+                return;
+            }
             client.send("receive_challenge", {user: opponentId, stadium: stadium, name: userData.user.toUpperCase()});
             return;
         }
