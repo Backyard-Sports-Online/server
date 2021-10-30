@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  server:
+    build: ./
+    links:
+      - redis
+    ports:
+      - "9130:9130"
+
+  redis:
+    image: redis
+    expose:
+      - 6379
+
+  # This image must be built from the BYOnline session code (https://github.com/Backyard-Sports-Online/session)
+  session-main:
+    image: session-main:latest
+    ports:
+      - "9130:9130/udp"
