@@ -57,6 +57,7 @@ class Redis {
             'icon': Number(response['icon']),
             'stats': stats
             .split(',').map(Number),
+            'ongoing_results': response['ongoing_results'].split(',').map(Number),
             'game': response['game'],
             'area': Number(response['area']),
             'inGame': Number(response['inGame']),
@@ -208,6 +209,18 @@ class Redis {
                       game: game,
                       games: Math.floor(gamesPlaying)
         });
+    }
+
+    async setOngoingResults(userId, resultsSide, resultsFields) {
+        await this.redis.hmset(`byonline:users:${userId}`, {ongoing_results: resultsFields, side: resultsSide});
+    }
+
+    async updateStats(userId, game, newStats) {
+        if (game == "football" ) {
+            await this.redis.hmset(`byonline:users:${userId}`, {f_stats: newStats.toString()});
+        } else {
+            await this.redis.hmset(`byonline:users:${userId}`, {b_stats: newStats.toString()});
+        }
     }
 }
 

@@ -109,6 +109,63 @@ server.handleMessage('game_started', async (client, args) => {
 server.handleMessage('game_finished', async (client, args) => {
     await redis.setInGame(client.userId, 0);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
+
+    // Get the most recent results data
+    const user = await redis.getUserById(client.userId);
+    const finalResults = user.ongoing_results;
+    if (client.game == "football") {
+        // TODO: Football stats
+    } else {
+        // Unpack the game's results data
+        let winning,                  // 1 if ahead, 0 if behind. If tied, both teams get 0
+            runs,
+            atBats,                   // There may be a bug where calling timeouts increments at bats
+            hits,
+            errors,
+            longestHomeRun,           // 0 if no home runs
+            singles,
+            doubles,
+            triples,
+            steals,
+            strikeouts,               // Strikeouts by this team's pitchers
+            walks,                    // Walks by this team's pitchers
+            quit,                     // 1 if user quit/disconnected?
+            innings = finalResults;   // Number of completed innings. Value is always the same for both teams
+        let homeRuns = hits - (singles + doubles + triples);
+        let winSign = winning * 2 - 1;
+        if (quit == 1) {
+            // TODO: Handle quits/disconnects
+        }
+        // Then get this user's existing baseball stats
+        let userStats = user.stats;
+        userStats[0] += winning;  // Increment user's wins
+        userStats[1] += (1 - winning);  // Increment user's losses
+        if (Math.sign(userStats[3]) == winSign) {
+            // If user is continuing their streak, increment/decrement it.
+            userStats[3] += winSign;
+        } else {
+            // If user is starting a new streak.
+            userStats[3] = winSign;
+        }
+        // userStats[4]
+        // userStats[5]
+        userStats[6] += 1;  // Games played
+        userStats[7] += atBats;
+        userStats[8] += hits;
+        userStats[10] += singles;
+        userStats[11] += doubles;
+        userStats[12] += triples;
+        userStats[13] += homeRuns;
+        userStats[15] += steals;
+        userStats[16] += strikeouts;
+        userStats[17] += walks;
+        userStats[27] = Math.max(userStats[27], longestHomeRun);
+
+        // Update the user's stats
+        await redis.updateStats(client.userId, client.game, userStats);
+    }
+    // Then clear out the ongoing results
+    await redis.setOngoingResults(client.userId, "", "");
 });
 
 process.on('update_games_playing', async (args) => {
