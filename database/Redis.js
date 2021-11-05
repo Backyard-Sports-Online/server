@@ -229,7 +229,7 @@ class Redis {
     }
 
     async getOngoingResults(userId, game) {
-        ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:baseball:${userId}`);
+        const ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:baseball:${userId}`);
         return ongoingResults;
     }
 

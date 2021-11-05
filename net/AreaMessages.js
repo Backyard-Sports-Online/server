@@ -70,7 +70,8 @@ server.handleMessage('get_players', async (client, args) => {
             // Don't add ourselves in.
             continue;
         }
-        players.push([user.user, user.id, user.icon, user.stats[0], user.stats[1], user.stats[2], user.phone, user.opponent]);
+        // TODO: Fix this
+        players.push([user.user, user.id, user.icon, 0, 0, 0, user.phone, user.opponent]);
     }
     client.send('players_list', {players: players.slice(client.sliceStart, client.sliceEnd)});
 
@@ -89,7 +90,8 @@ process.on('update_players_list', (args) => {
                     // Don't add ourselves in.
                     continue;
                 }
-                players.push([user.user, user.id, user.icon, user.stats[0], user.stats[1], user.stats[2], user.phone, user.opponent]);
+                // TODO: Fix this
+                players.push([user.user, user.id, user.icon, 0, 0, 0, user.phone, user.opponent]);
             }
             client.send('players_list', {players: players.slice(client.sliceStart, client.sliceEnd)});
         }

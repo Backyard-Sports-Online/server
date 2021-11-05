@@ -179,7 +179,7 @@ server.handleMessage("game_results", async (client, args) => {
     } else {
         resultsSide = "away";
     }
-    const resultsFields = args.fields.split(',');
+    const resultsFields = args.fields;
     const ongoingResults = {
         winning: resultsFields[0],
         runs: resultsFields[1],
@@ -196,6 +196,6 @@ server.handleMessage("game_results", async (client, args) => {
         quit: resultsFields[12],
         completedInnings: resultsFields[13],
         side: resultsSide
-    }
+    };
     await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });

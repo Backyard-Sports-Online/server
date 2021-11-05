@@ -36,7 +36,7 @@ const StatsFormatters = {
             numericStats.longestHomeRun,
             0
         ];
-        return statsArray.join(",");
+        return statsArray;
     },
     // TODO: Football
 };
