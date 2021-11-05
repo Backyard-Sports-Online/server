@@ -3,6 +3,7 @@
 const createLogger = require('logging').default;
 const ioredis = require("ioredis")
 const Areas = require('../global/Areas.js');
+const Stats = require('../global/Stats.js');
 
 class Redis {
     constructor(config) {
@@ -45,18 +46,10 @@ class Redis {
             this.logger.warn(`User ${userId} not found in Redis!`);
             return {};
         }
-	let stats;
-        if (database == this) {
-            stats = (game == 'football' ? response['f_stats'] : response['b_stats']);
-        } else {
-            stats = response['stats'];
-        }
         return {
             'id': Number(userId),
             'user': response['user'],
             'icon': Number(response['icon']),
-            'stats': stats
-            .split(',').map(Number),
             'game': response['game'],
             'area': Number(response['area']),
             'inGame': Number(response['inGame']),
@@ -83,6 +76,9 @@ class Redis {
 
         await this.redis.hmset(`byonline:users:${userId}`, user);
         await this.redis.hset("byonline:users:nameToId", user['user'].toUpperCase(), userId);
+
+        const baseballStats = Stats.DefaultStats.baseball;
+        await this.redis.hmset(`byonline:stats:baseball:${userId}`, baseballStats)
     }
 
     async getUser(username, password, game) {
@@ -99,8 +95,6 @@ class Redis {
             user = {
                 'user': username,
                 'icon': 0,
-                'f_stats': Array(42).fill(0),
-                'b_stats': Array(29).fill(0),
             }
             this.addUser(userId, user, game);
             user['id'] = userId;
@@ -122,6 +116,7 @@ class Redis {
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
+            // await this.redis.del(`byonline:stats:baseball:${userId}`);
         } else {
             await this.redis.hmset(`byonline:users:${userId}`, {
                 'game': '',
@@ -129,6 +124,7 @@ class Redis {
                 'phone': 0,
                 'opponent': 0
             });
+            await this.redis.hmset(`byonline:stats:baseball:${userId}`, Stats.DefaultStats.baseball);
         }
     }
 
@@ -208,6 +204,37 @@ class Redis {
                       game: game,
                       games: Math.floor(gamesPlaying)
         });
+    }
+
+    async setStats(userId, game, stats) {
+        await this.redis.hmset(`byonline:stats:baseball:${userId}`, stats);
+    }
+
+    async getStats(userId, game) {
+        const statsKey = `byonline:stats:baseball:${userId}`;
+        const hasStats = await this.redis.exists(statsKey);
+        let stats;
+        if (hasStats) {
+            stats = await this.redis.hgetall(statsKey);
+        } else {
+            this.logger.info("SETTING DEFAULT STATS");
+            await this.setStats(userId, game, Stats.DefaultStats.baseball);
+            stats = Stats.DefaultStats.baseball;
+        }
+        return stats;
+    }
+
+    async setOngoingResults(userId, game, ongoingResults) {
+        await this.redis.hmset(`byonline:ongoingResults:baseball:${userId}`, ongoingResults);
+    }
+
+    async getOngoingResults(userId, game) {
+        ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:baseball:${userId}`);
+        return ongoingResults;
+    }
+
+    async removeOngoingResults(userId, game) {
+        await this.redis.del(`byonline:ongoingResults:baseball:${userId}`);
     }
 }
 

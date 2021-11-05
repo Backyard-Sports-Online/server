@@ -109,6 +109,40 @@ server.handleMessage('game_started', async (client, args) => {
 server.handleMessage('game_finished', async (client, args) => {
     await redis.setInGame(client.userId, 0);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
+
+    // Get the most recent results data
+    const finalResultsAsStrings = await redis.getOngoingResults(client.userId, client.game);
+    const finalResults = Object.fromEntries(
+        Object.entries(finalResultsAsStrings).map(([k, stat]) => [k, Number(stat)])
+    );
+    const homeRuns = finalResults.hits - (finalResults.singles + finalResults.doubles + finalResults.triples);
+    const winSign = finalResults.winning * 2 - 1;
+
+    // Then get this user's existing baseball stats
+    let stats = await redis.getStats(client.userId, client.game);
+    stats.wins += finalResults.winning;  // Increment user's wins
+    stats.losses += (1 - finalResults.winning);  // Increment user's losses
+    if (Math.sign(stats.streak) == winSign) {
+        // If user is continuing their streak, increment/decrement it.
+        stats.streak += winSign;
+    } else {
+        // If user is starting a new streak.
+        stats.streak = winSign;
+    }
+    // TODO (maybe): Wins in last 10 games and margin
+    stats.games += 1;
+    stats.atBats += finalResults.atBats;
+    stats.hits += finalResults.hits;
+    stats.singles += finalResults.singles;
+    stats.doubles += finalResults.doubles;
+    stats.triples += finalResults.triples;
+    stats.homeRuns += homeRuns;
+    stats.steals += finalResults.steals;
+    stats.strikeouts += finalResults.strikeouts;
+    stats.walks += finalResults.walks;
+    stats.longestHomeRun = Math.max(statslongestHomeRun, finalResults.longestHomeRun);
+
+    await redis.setStats(client.userId, client.game, stats);
 });
 
 process.on('update_games_playing', async (args) => {

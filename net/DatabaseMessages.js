@@ -3,6 +3,7 @@ const createLogger = require('logging').default;
 const logger = createLogger('DatabaseMessages');
 
 const Areas = require('../global/Areas.js');
+const Stats = require('../global/Stats.js');
 
 server.handleMessage("login", async (client, args) => {
     const username = args.user;
@@ -109,7 +110,12 @@ server.handleMessage('get_profile', async (client, args) => {
     if (user === {})
         return;
 
-    const profile = [user.icon].concat(user.stats);
+    const stats = await redis.getStats(userId, client.game);
+    logger.info("STATS: " + stats);
+    const formattedStats = Stats.StatsFormatters.baseball(stats);
+    logger.info("FORMATTED STATS: " + formattedStats);
+    const profile = [user.icon].concat(formattedStats);
+    logger.info(profile);
     client.send("profile_info", {profile: profile});
 });
 
@@ -162,5 +168,34 @@ server.handleMessage('locate_player', async (client, args) => {
 });
 
 server.handleMessage("game_results", async (client, args) => {
-    // TODO
+    const resultsUserId = args.user;
+    const reportingUserId = client.userId;
+    let resultsSide;
+    // The home team always reports the game results, so we can use that
+    // to tell whether the results are for the home or away team.
+    // TODO: Verify that this is true for football (it is for baseball)
+    if (reportingUserId == resultsUserId) {
+        resultsSide = "home";
+    } else {
+        resultsSide = "away";
+    }
+    const resultsFields = args.fields.split(',');
+    const ongoingResults = {
+        winning: resultsFields[0],
+        runs: resultsFields[1],
+        atBats: resultsFields[2],
+        hits: resultsFields[3],
+        errors: resultsFields[4],
+        longestHomeRun: resultsFields[5],
+        singles: resultsFields[6],
+        doubles: resultsFields[7],
+        triples: resultsFields[8],
+        steals: resultsFields[9],
+        strikeouts: resultsFields[10],
+        walks: resultsFields[11],
+        quit: resultsFields[12],
+        completedInnings: resultsFields[13],
+        side: resultsSide
+    }
+    await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });
