@@ -212,9 +212,8 @@ class Redis {
 
     async getStats(userId, game) {
         const statsKey = `byonline:stats:baseball:${userId}`;
-        const hasStats = await this.redis.exists(statsKey);
         let stats;
-        if (hasStats) {
+        if (await this.redis.exists(statsKey)) {
             stats = await this.redis.hgetall(statsKey);
         } else {
             this.logger.info("SETTING DEFAULT STATS");
@@ -234,7 +233,10 @@ class Redis {
     }
 
     async removeOngoingResults(userId, game) {
-        await this.redis.del(`byonline:ongoingResults:baseball:${userId}`);
+        const resultsKey = `byonline:ongoingResults:${game}:${userId}`;
+        if (await this.redis.exists(resultsKey)) {
+            await this.redis.del(resultsKey);
+        }
     }
 }
 

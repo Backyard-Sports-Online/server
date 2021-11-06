@@ -180,22 +180,7 @@ server.handleMessage("game_results", async (client, args) => {
         resultsSide = "away";
     }
     const resultsFields = args.fields;
-    const ongoingResults = {
-        winning: resultsFields[0],
-        runs: resultsFields[1],
-        atBats: resultsFields[2],
-        hits: resultsFields[3],
-        errors: resultsFields[4],
-        longestHomeRun: resultsFields[5],
-        singles: resultsFields[6],
-        doubles: resultsFields[7],
-        triples: resultsFields[8],
-        steals: resultsFields[9],
-        strikeouts: resultsFields[10],
-        walks: resultsFields[11],
-        quit: resultsFields[12],
-        completedInnings: resultsFields[13],
-        side: resultsSide
-    };
+    const ongoingResults = Stats.ResultsMappers.baseball(resultsFields, resultsSide);
+    logger.info("ONGOINGRESULTS: " + JSON.stringify(ongoingResults));
     await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });
