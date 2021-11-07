@@ -242,6 +242,7 @@ class Redis {
     async removeOngoingResults(userId, game) {
         const resultsKey = `byonline:ongoingResults:${game}:${userId}`;
         if (await this.redis.exists(resultsKey)) {
+            this.logger.info("REMOVING ONGOING RESULTS FOR KEY " + resultsKey)
             await this.redis.del(resultsKey);
         }
     }

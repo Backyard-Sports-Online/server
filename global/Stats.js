@@ -99,7 +99,7 @@ const Aggregators = {
         return stats;
     },
     // TODO: Football
-    "baseball": (finalResults, stats) => {
+    "football": (finalResults, stats) => {
         return {not_yet_supported: 1}
     }
 }

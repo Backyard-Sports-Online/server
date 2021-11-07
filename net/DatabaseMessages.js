@@ -112,7 +112,7 @@ server.handleMessage('get_profile', async (client, args) => {
 
     const stats = await redis.getStats(userId, client.game);
     logger.info("STATS: " + JSON.stringify(stats));
-    const formattedStats = Stats.StatsFormatters["baseball"](stats);
+    const formattedStats = Stats.StatsFormatters[client.game](stats);
     logger.info("FORMATTED STATS: " + formattedStats);
     const profile = [user.icon].concat(formattedStats);
     logger.info(profile);

@@ -114,26 +114,29 @@ server.handleMessage('game_started', async (client, args) => {
 
 server.handleMessage('game_finished', async (client, args) => {
     logger.info("GAME FINISHED " + client.userId + " vs. " + client.opponentId);
-    await redis.setInGame(client.userId, 0);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
+    const user = await redis.getUserById(client.userId, client.game);
+    if (user.inGame) {
+        logger.info("USER " + client.userId + " IS IN GAME");
+        await redis.setInGame(client.userId, 0);
+        if (await redis.hasOngoingResults(client.userId, client.game)) {
+            logger.info("HAS ONGOING RESULTS");
+            // Get the most recent results data
+            const finalResultsAsStrings = await redis.getOngoingResults(client.userId, client.game);
+            await redis.removeOngoingResults(client.userId, client.game);
+            const finalResults = Object.fromEntries(
+                Object.entries(finalResultsAsStrings).map(([k, stat]) => [k, Number(stat)])
+            );
+            // Get this user's existing stats
+            const statsStrings = await redis.getStats(client.userId, client.game);
+            let stats = Object.fromEntries(
+                Object.entries(statsStrings).map(([k, stat]) => [k, Number(stat)])
+            );
+            // Calculate updated stats
+            stats = Stats.Aggregators[client.game](finalResults, stats);
 
-    if (await redis.hasOngoingResults(client.userId, client.game)) {
-        logger.info("HAS ONGOING RESULTS");
-        // Get the most recent results data
-        const finalResultsAsStrings = await redis.getOngoingResults(client.userId, client.game);
-        await redis.removeOngoingResults(client.userId, client.game);
-        const finalResults = Object.fromEntries(
-            Object.entries(finalResultsAsStrings).map(([k, stat]) => [k, Number(stat)])
-        );
-        // Get this user's existing stats
-        const statsStrings = await redis.getStats(client.userId, client.game);
-        let stats = Object.fromEntries(
-            Object.entries(statsStrings).map(([k, stat]) => [k, Number(stat)])
-        );
-        // Calculate updated stats
-        stats = Stats.Aggregators[client.game](finalResults, stats);
-
-        await redis.setStats(client.userId, client.game, stats);
+            await redis.setStats(client.userId, client.game, stats);
+        }
     }
 });
 
