@@ -77,8 +77,8 @@ class Redis {
         await this.redis.hmset(`byonline:users:${userId}`, user);
         await this.redis.hset("byonline:users:nameToId", user['user'].toUpperCase(), userId);
 
-        const baseballStats = Stats.DefaultStats.baseball;
-        await this.redis.hmset(`byonline:stats:baseball:${userId}`, baseballStats)
+        const defaultStats = Stats.DefaultStats[game];
+        await this.redis.hmset(`byonline:stats:${game}:${userId}`, defaultStats)
     }
 
     async getUser(username, password, game) {
@@ -116,7 +116,8 @@ class Redis {
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
-            // await this.redis.del(`byonline:stats:baseball:${userId}`);
+            // Is the below correct? Or should we remove stats for both games?
+            await this.redis.del(`byonline:stats:${game}:${userId}`);
         } else {
             await this.redis.hmset(`byonline:users:${userId}`, {
                 'game': '',
@@ -124,7 +125,8 @@ class Redis {
                 'phone': 0,
                 'opponent': 0
             });
-            await this.redis.hmset(`byonline:stats:baseball:${userId}`, Stats.DefaultStats.baseball);
+            // Same question as above
+            await this.redis.hmset(`byonline:stats:${game}:${userId}`, Stats.DefaultStats[game]);
         }
     }
 
@@ -207,29 +209,34 @@ class Redis {
     }
 
     async setStats(userId, game, stats) {
-        await this.redis.hmset(`byonline:stats:baseball:${userId}`, stats);
+        this.logger.info("WRITING STATS FOR " + userId + ": " + JSON.stringify(stats));
+        await this.redis.hmset(`byonline:stats:${game}:${userId}`, stats);
     }
 
     async getStats(userId, game) {
-        const statsKey = `byonline:stats:baseball:${userId}`;
+        const statsKey = `byonline:stats:${game}:${userId}`;
         let stats;
         if (await this.redis.exists(statsKey)) {
             stats = await this.redis.hgetall(statsKey);
         } else {
             this.logger.info("SETTING DEFAULT STATS");
-            await this.setStats(userId, game, Stats.DefaultStats.baseball);
-            stats = Stats.DefaultStats.baseball;
+            await this.setStats(userId, game, Stats.DefaultStats[game]);
+            stats = Stats.DefaultStats[game];
         }
         return stats;
     }
 
     async setOngoingResults(userId, game, ongoingResults) {
-        await this.redis.hmset(`byonline:ongoingResults:baseball:${userId}`, ongoingResults);
+        await this.redis.hmset(`byonline:ongoingResults:${game}:${userId}`, ongoingResults);
     }
 
     async getOngoingResults(userId, game) {
-        const ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:baseball:${userId}`);
+        const ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:${game}:${userId}`);
         return ongoingResults;
+    }
+
+    async hasOngoingResults(userId, game) {
+        return await this.redis.exists(`byonline:ongoingResults:${game}:${userId}`);
     }
 
     async removeOngoingResults(userId, game) {

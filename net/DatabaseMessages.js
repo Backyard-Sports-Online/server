@@ -111,8 +111,8 @@ server.handleMessage('get_profile', async (client, args) => {
         return;
 
     const stats = await redis.getStats(userId, client.game);
-    logger.info("STATS: " + stats);
-    const formattedStats = Stats.StatsFormatters.baseball(stats);
+    logger.info("STATS: " + JSON.stringify(stats));
+    const formattedStats = Stats.StatsFormatters["baseball"](stats);
     logger.info("FORMATTED STATS: " + formattedStats);
     const profile = [user.icon].concat(formattedStats);
     logger.info(profile);
@@ -180,7 +180,7 @@ server.handleMessage("game_results", async (client, args) => {
         resultsSide = "away";
     }
     const resultsFields = args.fields;
-    const ongoingResults = Stats.ResultsMappers.baseball(resultsFields, resultsSide);
+    const ongoingResults = Stats.ResultsMappers[client.game](resultsFields, resultsSide);
     logger.info("ONGOINGRESULTS: " + JSON.stringify(ongoingResults));
     await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });

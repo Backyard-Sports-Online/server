@@ -37,8 +37,11 @@ const StatsFormatters = {
             0
         ];
         return statsArray;
-    }
+    },
     // TODO: Football
+    "football": (stats) => {
+        return Array(42).fill(0)
+    }
 };
 
 const ResultsMappers = {
@@ -61,8 +64,11 @@ const ResultsMappers = {
             side: resultsSide
         };
         return ongoingResults;
-    }
+    },
     // TODO: Football
+    "football": (resultsFields, resultsSide) => {
+        return {"not_yet_supported": 1}
+    }
 };
 
 const Aggregators = {
@@ -91,8 +97,11 @@ const Aggregators = {
         stats.walks += finalResults.walks;
         stats.longestHomeRun = Math.max(stats.longestHomeRun, finalResults.longestHomeRun);
         return stats;
-    }
+    },
     // TODO: Football
+    "baseball": (finalResults, stats) => {
+        return {not_yet_supported: 1}
+    }
 }
 
 const DefaultStats = {
@@ -112,8 +121,11 @@ const DefaultStats = {
         strikeouts: 0,
         walks: 0,
         longestHomeRun: 0
-    }
+    },
     // TODO: Football
+    "football": {
+        not_yet_supported: 1
+    }
 };
 
 module.exports = {
