@@ -20,3 +20,17 @@ services:
     image: session-main:latest
     ports:
       - "9130:9130/udp"
+
+  site:
+    image: site:latest
+    ports:
+      - "3000:3000"
+    command:
+      - npm
+      - run
+      - compose
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"

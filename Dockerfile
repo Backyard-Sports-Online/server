@@ -7,6 +7,8 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-COPY credentials.localdev.yaml credentials.yaml
+
+ARG CREDENTIALS_FILE=credentials.localdev.yaml
+COPY ${CREDENTIALS_FILE} credentials.yaml
 
 CMD [ "node", "run.js" ]
