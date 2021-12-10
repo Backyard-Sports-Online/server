@@ -7,6 +7,12 @@ services:
       - redis
     ports:
       - "9130:9130"
+    environment:
+      - DATABASE=${DATABASE:-redis}
+      - WEB_ENDPOINT=http://site:3000/api
+      - WEB_TOKEN=
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
 
   # This image must be built from the BYOnline session code (https://github.com/Backyard-Sports-Online/session)
   session-main:
