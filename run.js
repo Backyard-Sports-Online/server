@@ -2,7 +2,7 @@
 
 const yaml         = require('js-yaml');
 const fs           = require('fs');
-const createLogger = require('logging');
+const createLogger = require('logging').default;
 const cluster      = require('cluster');
 
 // Read the configuration files.
@@ -44,12 +44,9 @@ if (cluster.isMaster) {
     const NetworkListener = require('./net/NetworkListener');
     const Redis = require('./database/Redis');
     const Discord = require('./discord/Discord');
-    const logger = createLogger.default("asdf");
     global.server = new NetworkListener(config['network'])
     global.redis = new Redis(credentials.redis);
-    logger.info(process.env);
     if (process.env.DATABASE == 'web') {
-        logger.info("ITS WEB")
         const WebAPI = require('./database/WebAPI');
         global.database = new WebAPI(credentials.web);
     } else {

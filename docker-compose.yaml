@@ -11,6 +11,9 @@ services:
       - WEB_TOKEN=${WEB_TOKEN:-}
       - REDIS_HOST=${REDIS_HOST:-redis}
       - REDIS_PORT=${REDIS_PORT:-6379}
+      - DISCORD_CLIENT
+      - DISCORD_CHANNEL
+      - DISCORD_TOKEN
 
   # This image must be built from the BYOnline session code (https://github.com/Backyard-Sports-Online/session)
   session-main:
