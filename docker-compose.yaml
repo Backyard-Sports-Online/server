@@ -3,10 +3,17 @@ version: "3.8"
 services:
   server:
     build: ./
-    links:
-      - redis
     ports:
       - "9130:9130"
+    environment:
+      - DATABASE=${DATABASE:-redis}
+      - WEB_ENDPOINT=${WEB_ENDPOINT:-http://site:3000/api}
+      - WEB_TOKEN=${WEB_TOKEN:-}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - DISCORD_CLIENT
+      - DISCORD_CHANNEL
+      - DISCORD_TOKEN
 
   redis:
     image: redis
