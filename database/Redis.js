@@ -116,7 +116,7 @@ class Redis {
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
-            // Is the below correct? Or should we remove stats for both games?
+            // TODO: Is the below correct? Or should we remove stats for both games?
             await this.redis.del(`byonline:stats:${game}:${userId}`);
         } else {
             await this.redis.hmset(`byonline:users:${userId}`, {
@@ -209,7 +209,7 @@ class Redis {
     }
 
     async setStats(userId, game, stats) {
-        this.logger.info("WRITING STATS FOR " + userId + ": " + JSON.stringify(stats));
+        this.logger.info("WRITING STATS FOR " + userId + " TO REDIS: " + JSON.stringify(stats));
         await this.redis.hmset(`byonline:stats:${game}:${userId}`, stats);
     }
 

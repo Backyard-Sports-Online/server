@@ -108,12 +108,14 @@ server.handleMessage('game_started', async (client, args) => {
 
     await redis.sendUsersInArea(client.areaId, client.game);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
+
     await redis.removeOngoingResults(client.userId, client.game);
     await redis.removeOngoingResults(playerId, client.game);
 });
 
 server.handleMessage('game_finished', async (client, args) => {
     logger.info("GAME FINISHED " + client.userId + " vs. " + client.opponentId);
+    logger.info(args);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
     const user = await redis.getUserById(client.userId, client.game);
     if (user.inGame) {
@@ -128,14 +130,18 @@ server.handleMessage('game_finished', async (client, args) => {
                 Object.entries(finalResultsAsStrings).map(([k, stat]) => [k, Number(stat)])
             );
             // Get this user's existing stats
-            const statsStrings = await redis.getStats(client.userId, client.game);
-            let stats = Object.fromEntries(
-                Object.entries(statsStrings).map(([k, stat]) => [k, Number(stat)])
-            );
+            let stats;
+            stats = await database.getStats(client.userId, client.game);
+            if (database == redis) {
+                // If redis is the DB, we need to convert the values from strings to numbers
+                stats = Object.fromEntries(
+                    Object.entries(stats).map(([k, stat]) => [k, Number(stat)])
+                );
+            }
             // Calculate updated stats
             stats = Stats.Aggregators[client.game](finalResults, stats);
 
-            await redis.setStats(client.userId, client.game, stats);
+            await database.setStats(client.userId, client.game, stats);
         }
     }
 });

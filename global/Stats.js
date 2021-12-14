@@ -59,7 +59,7 @@ const ResultsMappers = {
             steals: resultsFields[9],
             strikeouts: resultsFields[10],
             walks: resultsFields[11],
-            quit: resultsFields[12],
+            disconnect: resultsFields[12],
             completedInnings: resultsFields[13],
             side: resultsSide
         };
