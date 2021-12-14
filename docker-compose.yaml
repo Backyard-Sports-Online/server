@@ -3,18 +3,41 @@ version: "3.8"
 services:
   server:
     build: ./
-    links:
-      - redis
     ports:
       - "9130:9130"
-
-  redis:
-    image: redis
-    expose:
-      - 6379
+    environment:
+      - DATABASE=${DATABASE:-redis}
+      - WEB_ENDPOINT=${WEB_ENDPOINT:-http://site:3000/api}
+      - WEB_TOKEN=${WEB_TOKEN:-}
+      - REDIS_HOST=${REDIS_HOST:-redis}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - DISCORD_CLIENT
+      - DISCORD_CHANNEL
+      - DISCORD_TOKEN
 
   # This image must be built from the BYOnline session code (https://github.com/Backyard-Sports-Online/session)
   session-main:
     image: session-main:latest
     ports:
       - "9130:9130/udp"
+
+  site:
+    image: site:latest
+    ports:
+      - "3000:3000"
+    command:
+      - npm
+      - run
+      - compose
+
+  mongo:
+    image: mongo
+    ports:
+      - "27017:27017"
+
+  redis:
+    image: redis
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"

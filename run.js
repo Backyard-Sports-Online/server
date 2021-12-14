@@ -2,12 +2,28 @@
 
 const yaml         = require('js-yaml');
 const fs           = require('fs');
-const createLogger = require('logging');
+const createLogger = require('logging').default;
 const cluster      = require('cluster');
 
 // Read the configuration files.
 const config = yaml.load(fs.readFileSync('config.yaml'));
-const credientals = yaml.load(fs.readFileSync('credentials.yaml'));
+
+// Get credentials and such from environment variables
+const credentials = {
+    web: {
+        endpoint: process.env.WEB_ENDPOINT,
+        token: process.env.WEB_TOKEN,
+    },
+    redis: {
+        host: process.env.REDIS_HOST,
+        port: process.env.REDIS_PORT,
+    },
+    discord: {
+        client: process.env.DISCORD_CLIENT,
+        token: process.env.DISCORD_TOKEN,
+        channel: process.env.DISCORD_CHANNEL,
+    }
+};
 
 if (cluster.isMaster) {
     // Fork out workers
@@ -28,12 +44,11 @@ if (cluster.isMaster) {
     const NetworkListener = require('./net/NetworkListener');
     const Redis = require('./database/Redis');
     const Discord = require('./discord/Discord');
-
     global.server = new NetworkListener(config['network'])
-    global.redis = new Redis(credientals['redis']);
-    if (credientals.web) {
+    global.redis = new Redis(credentials.redis);
+    if (process.env.DATABASE == 'web') {
         const WebAPI = require('./database/WebAPI');
-        global.database = new WebAPI(credientals['web']);
+        global.database = new WebAPI(credentials.web);
     } else {
         global.database = global.redis;
     }
@@ -44,8 +59,8 @@ if (cluster.isMaster) {
     require('./net/ChallengeMessages.js');
     require('./net/SessionMessages.js');
 
-    if (process.env.FIRST_WORKER && credientals.discord) {
-      global.discord = new Discord(credientals['discord']);
+    if (process.env.FIRST_WORKER && credentials.discord.client) {
+      global.discord = new Discord(credentials['discord']);
     }
 
     // Handle messages from other processes.
