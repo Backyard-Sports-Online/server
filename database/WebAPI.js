@@ -46,7 +46,6 @@ class WebAPI {
     }
 
     async setStats(userId, game, stats) {
-        this.logger.info("SENDING STATS FOR " + userId + " TO SITE: " + JSON.stringify(stats));
         const response = await this.post('/set_stats', {
             token: this.token,
             userId: userId,
@@ -61,18 +60,15 @@ class WebAPI {
     }
 
     async getStats(userId, game) {
-        this.logger.info("GETTING STATS FOR " + userId + " FROM SITE");
         const response = await this.get('/get_stats', {
             token: this.token,
             userId: userId,
             game: game,
         })
-        this.logger.info(JSON.stringify(response));
         let stats;
         if (response['stats']) {
             stats = response['stats'];
         } else {
-            this.logger.info("SETTING DEFAULT STATS");
             await this.setStats(userId, game, Stats.DefaultStats[game]);
             stats = Stats.DefaultStats[game];
         }

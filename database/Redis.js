@@ -77,8 +77,10 @@ class Redis {
         await this.redis.hmset(`byonline:users:${userId}`, user);
         await this.redis.hset("byonline:users:nameToId", user['user'].toUpperCase(), userId);
 
-        const defaultStats = Stats.DefaultStats[game];
-        await this.redis.hmset(`byonline:stats:${game}:${userId}`, defaultStats)
+        if (database == this) {
+            const defaultStats = Stats.DefaultStats[game];
+            await this.redis.hmset(`byonline:stats:${game}:${userId}`, defaultStats);
+        }
     }
 
     async getUser(username, password, game) {
@@ -116,8 +118,7 @@ class Redis {
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
-            // TODO: Is the below correct? Or should we remove stats for both games?
-            await this.redis.del(`byonline:stats:${game}:${userId}`);
+            await this.removeOngoingResults(client.userId, client.game);
         } else {
             await this.redis.hmset(`byonline:users:${userId}`, {
                 'game': '',
@@ -125,8 +126,7 @@ class Redis {
                 'phone': 0,
                 'opponent': 0
             });
-            // Same question as above
-            await this.redis.hmset(`byonline:stats:${game}:${userId}`, Stats.DefaultStats[game]);
+            await this.removeOngoingResults(client.userId, client.game);
         }
     }
 
@@ -209,7 +209,6 @@ class Redis {
     }
 
     async setStats(userId, game, stats) {
-        this.logger.info("WRITING STATS FOR " + userId + " TO REDIS: " + JSON.stringify(stats));
         await this.redis.hmset(`byonline:stats:${game}:${userId}`, stats);
     }
 
@@ -219,7 +218,6 @@ class Redis {
         if (await this.redis.exists(statsKey)) {
             stats = await this.redis.hgetall(statsKey);
         } else {
-            this.logger.info("SETTING DEFAULT STATS");
             await this.setStats(userId, game, Stats.DefaultStats[game]);
             stats = Stats.DefaultStats[game];
         }
@@ -242,7 +240,6 @@ class Redis {
     async removeOngoingResults(userId, game) {
         const resultsKey = `byonline:ongoingResults:${game}:${userId}`;
         if (await this.redis.exists(resultsKey)) {
-            this.logger.info("REMOVING ONGOING RESULTS FOR KEY " + resultsKey)
             await this.redis.del(resultsKey);
         }
     }

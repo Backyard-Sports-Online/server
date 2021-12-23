@@ -100,7 +100,6 @@ process.on('update_players_list', (args) => {
 });
 
 server.handleMessage('game_started', async (client, args) => {
-    logger.info("GAME STARTED " + client.userId + " " + args.user);
     const playerId = args.user;
 
     await redis.setInGame(client.userId, 1);
@@ -114,15 +113,11 @@ server.handleMessage('game_started', async (client, args) => {
 });
 
 server.handleMessage('game_finished', async (client, args) => {
-    logger.info("GAME FINISHED " + client.userId + " vs. " + client.opponentId);
-    logger.info(args);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
     const user = await redis.getUserById(client.userId, client.game);
     if (user.inGame) {
-        logger.info("USER " + client.userId + " IS IN GAME");
         await redis.setInGame(client.userId, 0);
         if (await redis.hasOngoingResults(client.userId, client.game)) {
-            logger.info("HAS ONGOING RESULTS");
             // Get the most recent results data
             const finalResultsAsStrings = await redis.getOngoingResults(client.userId, client.game);
             await redis.removeOngoingResults(client.userId, client.game);
