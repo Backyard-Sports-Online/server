@@ -50,7 +50,6 @@ class Redis {
             'id': Number(userId),
             'user': response['user'],
             'icon': Number(response['icon']),
-            'stats': '',  // TODO
             'game': response['game'],
             'area': Number(response['area']),
             'inGame': Number(response['inGame']),
@@ -114,7 +113,6 @@ class Redis {
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
-            
         } else {
             await this.redis.hmset(`byonline:users:${userId}`, {
                 'game': '',
