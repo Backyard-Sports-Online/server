@@ -50,6 +50,7 @@ class Redis {
             'id': Number(userId),
             'user': response['user'],
             'icon': Number(response['icon']),
+            'stats': '',  // TODO
             'game': response['game'],
             'area': Number(response['area']),
             'inGame': Number(response['inGame']),
@@ -76,11 +77,6 @@ class Redis {
 
         await this.redis.hmset(`byonline:users:${userId}`, user);
         await this.redis.hset("byonline:users:nameToId", user['user'].toUpperCase(), userId);
-
-        if (database == this) {
-            const defaultStats = Stats.DefaultStats[game];
-            await this.redis.hmset(`byonline:stats:${game}:${userId}`, defaultStats);
-        }
     }
 
     async getUser(username, password, game) {
@@ -118,7 +114,7 @@ class Redis {
 
             await this.redis.del(`byonline:users:${userId}`);
             await this.redis.hdel('byonline:users:nameToId', user.user.toUpperCase());
-            await this.removeOngoingResults(client.userId, client.game);
+            
         } else {
             await this.redis.hmset(`byonline:users:${userId}`, {
                 'game': '',
@@ -126,8 +122,8 @@ class Redis {
                 'phone': 0,
                 'opponent': 0
             });
-            await this.removeOngoingResults(client.userId, client.game);
         }
+        await this.removeOngoingResults(client.userId, client.game);
     }
 
     async setIcon(userId, icon) {
@@ -209,19 +205,11 @@ class Redis {
     }
 
     async setStats(userId, game, stats) {
-        await this.redis.hmset(`byonline:stats:${game}:${userId}`, stats);
+        this.logger.warn("Stats not supported with Redis DB!");
     }
 
     async getStats(userId, game) {
-        const statsKey = `byonline:stats:${game}:${userId}`;
-        let stats;
-        if (await this.redis.exists(statsKey)) {
-            stats = await this.redis.hgetall(statsKey);
-        } else {
-            await this.setStats(userId, game, Stats.DefaultStats[game]);
-            stats = Stats.DefaultStats[game];
-        }
-        return stats;
+        return Stats.DefaultStats[game];
     }
 
     async setOngoingResults(userId, game, ongoingResults) {
