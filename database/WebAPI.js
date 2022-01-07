@@ -1,6 +1,7 @@
 "use strict";
 const createLogger = require('logging').default;
 const bent = require('bent');
+const Stats = require('../global/Stats.js');
 
 class WebAPI {
     constructor(config) {
@@ -42,6 +43,36 @@ class WebAPI {
 
         // Set the icon in the Redis cache.
         redis.setIcon(userId, icon);
+    }
+
+    async setStats(userId, game, stats) {
+        const response = await this.post('/set_stats', {
+            token: this.token,
+            userId: userId,
+            game: game,
+            stats: stats,
+        })
+
+        if (response.error) {
+            this.logger.error("Failed to set stats!", { response });
+            return;
+        }
+    }
+
+    async getStats(userId, game) {
+        const response = await this.get('/get_stats', {
+            token: this.token,
+            userId: userId,
+            game: game,
+        })
+        let stats;
+        if (response['stats']) {
+            stats = response['stats'];
+        } else {
+            await this.setStats(userId, game, Stats.DefaultStats[game]);
+            stats = Stats.DefaultStats[game];
+        }
+        return stats;
     }
 }
 

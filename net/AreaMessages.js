@@ -3,6 +3,7 @@ const createLogger = require('logging').default;
 const logger = createLogger('AreaMessages');
 
 const Areas = require('../global/Areas.js');
+const Stats = require('../global/Stats.js');
 
 server.handleMessage('get_population', async (client, args) => {
     const areaId = args.area;
@@ -70,7 +71,8 @@ server.handleMessage('get_players', async (client, args) => {
             // Don't add ourselves in.
             continue;
         }
-        players.push([user.user, user.id, user.icon, user.stats[0], user.stats[1], user.stats[2], user.phone, user.opponent]);
+        // TODO: Fix this
+        players.push([user.user, user.id, user.icon, 0, 0, 0, user.phone, user.opponent]);
     }
     client.send('players_list', {players: players.slice(client.sliceStart, client.sliceEnd)});
 
@@ -89,7 +91,8 @@ process.on('update_players_list', (args) => {
                     // Don't add ourselves in.
                     continue;
                 }
-                players.push([user.user, user.id, user.icon, user.stats[0], user.stats[1], user.stats[2], user.phone, user.opponent]);
+                // TODO: Fix this
+                players.push([user.user, user.id, user.icon, 0, 0, 0, user.phone, user.opponent]);
             }
             client.send('players_list', {players: players.slice(client.sliceStart, client.sliceEnd)});
         }
@@ -104,11 +107,38 @@ server.handleMessage('game_started', async (client, args) => {
 
     await redis.sendUsersInArea(client.areaId, client.game);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
+
+    await redis.removeOngoingResults(client.userId, client.game);
+    await redis.removeOngoingResults(playerId, client.game);
 });
 
 server.handleMessage('game_finished', async (client, args) => {
-    await redis.setInGame(client.userId, 0);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
+    const user = await redis.getUserById(client.userId, client.game);
+    if (user.inGame) {
+        await redis.setInGame(client.userId, 0);
+        if (await redis.hasOngoingResults(client.userId, client.game)) {
+            // Get the most recent results data
+            const finalResultsAsStrings = await redis.getOngoingResults(client.userId, client.game);
+            await redis.removeOngoingResults(client.userId, client.game);
+            const finalResults = Object.fromEntries(
+                Object.entries(finalResultsAsStrings).map(([k, stat]) => [k, Number(stat)])
+            );
+            // Get this user's existing stats
+            let stats;
+            stats = await database.getStats(client.userId, client.game);
+            if (database == redis) {
+                // If redis is the DB, we need to convert the values from strings to numbers
+                stats = Object.fromEntries(
+                    Object.entries(stats).map(([k, stat]) => [k, Number(stat)])
+                );
+            }
+            // Calculate updated stats
+            stats = Stats.Aggregators[client.game](finalResults, stats);
+
+            await database.setStats(client.userId, client.game, stats);
+        }
+    }
 });
 
 process.on('update_games_playing', async (args) => {

@@ -3,6 +3,7 @@
 const createLogger = require('logging').default;
 const ioredis = require("ioredis")
 const Areas = require('../global/Areas.js');
+const Stats = require('../global/Stats.js');
 
 class Redis {
     constructor(config) {
@@ -45,18 +46,10 @@ class Redis {
             this.logger.warn(`User ${userId} not found in Redis!`);
             return {};
         }
-	let stats;
-        if (database == this) {
-            stats = (game == 'football' ? response['f_stats'] : response['b_stats']);
-        } else {
-            stats = response['stats'];
-        }
         return {
             'id': Number(userId),
             'user': response['user'],
             'icon': Number(response['icon']),
-            'stats': stats
-            .split(',').map(Number),
             'game': response['game'],
             'area': Number(response['area']),
             'inGame': Number(response['inGame']),
@@ -99,8 +92,6 @@ class Redis {
             user = {
                 'user': username,
                 'icon': 0,
-                'f_stats': Array(42).fill(0),
-                'b_stats': Array(29).fill(0),
             }
             this.addUser(userId, user, game);
             user['id'] = userId;
@@ -130,6 +121,7 @@ class Redis {
                 'opponent': 0
             });
         }
+        await this.removeOngoingResults(client.userId, client.game);
     }
 
     async setIcon(userId, icon) {
@@ -208,6 +200,34 @@ class Redis {
                       game: game,
                       games: Math.floor(gamesPlaying)
         });
+    }
+
+    async setStats(userId, game, stats) {
+        this.logger.warn("Stats not supported with Redis DB!");
+    }
+
+    async getStats(userId, game) {
+        return Stats.DefaultStats[game];
+    }
+
+    async setOngoingResults(userId, game, ongoingResults) {
+        await this.redis.hmset(`byonline:ongoingResults:${game}:${userId}`, ongoingResults);
+    }
+
+    async getOngoingResults(userId, game) {
+        const ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:${game}:${userId}`);
+        return ongoingResults;
+    }
+
+    async hasOngoingResults(userId, game) {
+        return await this.redis.exists(`byonline:ongoingResults:${game}:${userId}`);
+    }
+
+    async removeOngoingResults(userId, game) {
+        const resultsKey = `byonline:ongoingResults:${game}:${userId}`;
+        if (await this.redis.exists(resultsKey)) {
+            await this.redis.del(resultsKey);
+        }
     }
 }
 

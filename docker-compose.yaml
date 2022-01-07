@@ -15,6 +15,13 @@ services:
       - DISCORD_CHANNEL
       - DISCORD_TOKEN
 
+  redis:
+    image: redis
+    expose:
+      - 6379
+    ports:
+      - "6379:6379"
+
   # This image must be built from the BYOnline session code (https://github.com/Backyard-Sports-Online/session)
   session-main:
     image: session-main:latest
@@ -34,10 +41,3 @@ services:
     image: mongo
     ports:
       - "27017:27017"
-
-  redis:
-    image: redis
-    expose:
-      - 6379
-    ports:
-      - "6379:6379"
