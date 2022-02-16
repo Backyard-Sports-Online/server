@@ -40,6 +40,8 @@ class Discord {
     let footballUsers = '';
 
     const userIds = Object.values(await redis.redis.hgetall("byonline:users:nameToId")).map(Number);
+    let ongoingScoresByHome = {};
+    let inGameUserIdsToNames = {};  // Storing so we don't have to call redis for these again later
     for (const userId of userIds) {
       const user = await redis.getUserById(userId);
       if (user === {} || !user.game)
@@ -47,8 +49,37 @@ class Discord {
         continue;
 
       usersOnline++;
-      if (user.inGame)
+      if (user.inGame) {
         gamesPlaying += .5;
+
+        const ongoingResultsStrings = redis.getOngoingResults(userId, user.game);
+        const ongoingResults = Object.fromEntries(
+          Object.entries(ongoingResultsStrings).map(([k, stat]) => [k, Number(stat)])
+        );
+        if (ongoingResults) {
+          inGameUserIdsToNames[userId] = user.user;
+          if ((userId in ongoingScoresByHome) && ("homeScore" in ongoingScoresByHome[userId])) {
+            // We already have the home team's score for this game. This must be the away team
+            ongoingScoresByHome[ongoingResults.opponentId]["awayScore"] = ongoingResults.runs;
+          } else if ((userId in ongoingScoresByHome) && ("awayScore" in ongoingScoresByHome[userId])) {
+            // We already have the away team's score for this game. This must be the home team
+            ongoingScoresByHome[userId]["homeScore"] = ongoingResults.runs;
+          } else if (ongoingResults.isHome == 1) {
+            // We don't have either team's score yet and this is the home team. Let's add it
+            ongoingScoresByHome[userId] = {
+              "awayId": ongoingResults.opponentId,
+              "homeScore": ongoingResults.runs,
+            };
+          } else if (ongoingResults.isHome == 0) {
+            // We don't have either team's score yet and this is the away team. Let's add it
+            ongoingScoresByHome[ongoingResults.opponentId] = {
+              "awayId": userId,
+              "awayScore": ongoingResults.runs,
+            };
+          }
+        }
+
+      }
 
       let area = "(Online)";
       let groupName = "";
@@ -82,7 +113,20 @@ class Discord {
       embed.setDescription(`Total Population: ${usersOnline}\nGames Currently Playing: ${Math.floor(gamesPlaying)}`);
       if (baseballUsers)
         embed.addField("Backyard Baseball 2001", baseballUsers);
-      if (footballUsers)
+
+        let baseballScores = "";
+        for (const homeId in ongoingScoresByHome) {
+          const homeName = inGameUserIdsToNames[homeId];
+          const awayName = inGameUserIdsToNames[ongoingScoresByHome[homeId]["awayId"]];
+          const homeScore = ongoingScoresByHome[homeId]["homeScore"];
+          const homeScore = ongoingScoresByHome[homeId]["awayScore"];
+          baseballScores += `${awayName} ${awayScore} - ${homeScore} ${homeName}\n`
+        }
+        if (baseballScores) {
+          embed.addField("Backyard Baseball 2001 Scores", baseballScores);
+        }
+
+        if (footballUsers)
         embed.addField("Backyard Football", footballUsers);
     }
 
