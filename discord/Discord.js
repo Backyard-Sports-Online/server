@@ -52,14 +52,14 @@ class Discord {
       if (user.inGame) {
         gamesPlaying += .5;
 
-        const ongoingResultsStrings = redis.getOngoingResults(userId, user.game);
+        const ongoingResultsStrings = await redis.getOngoingResults(userId, user.game);
         const ongoingResults = Object.fromEntries(
           Object.entries(ongoingResultsStrings).map(([k, stat]) => [k, Number(stat)])
         );
         if (ongoingResults) {
           inGameUserIdsToNames[userId] = user.user;
-          if ((userId in ongoingScoresByHome) && ("homeScore" in ongoingScoresByHome[userId])) {
-            // We already have the home team's score for this game. This must be the away team
+          if ((ongoingResults.opponentId in ongoingScoresByHome) && (ongoingScoresByHome[ongoingResults.opponentId]["awayId"] == userId)) {
+            // This is the away team; we already have the home team's score for this game
             ongoingScoresByHome[ongoingResults.opponentId]["awayScore"] = ongoingResults.runs;
           } else if ((userId in ongoingScoresByHome) && ("awayScore" in ongoingScoresByHome[userId])) {
             // We already have the away team's score for this game. This must be the home team
@@ -111,22 +111,24 @@ class Discord {
       embed.setDescription("No one is currently online. :(");
     else {
       embed.setDescription(`Total Population: ${usersOnline}\nGames Currently Playing: ${Math.floor(gamesPlaying)}`);
-      if (baseballUsers)
-        embed.addField("Backyard Baseball 2001", baseballUsers);
-
+      if (baseballUsers) {
         let baseballScores = "";
         for (const homeId in ongoingScoresByHome) {
           const homeName = inGameUserIdsToNames[homeId];
           const awayName = inGameUserIdsToNames[ongoingScoresByHome[homeId]["awayId"]];
           const homeScore = ongoingScoresByHome[homeId]["homeScore"];
-          const homeScore = ongoingScoresByHome[homeId]["awayScore"];
+          const awayScore = ongoingScoresByHome[homeId]["awayScore"];
           baseballScores += `${awayName} ${awayScore} - ${homeScore} ${homeName}\n`
         }
-        if (baseballScores) {
-          embed.addField("Backyard Baseball 2001 Scores", baseballScores);
-        }
 
-        if (footballUsers)
+        embed.addField("Backyard Baseball 2001", baseballUsers, baseballScores == "" ? false : true);
+
+        if (baseballScores != "") {
+          embed.addField("Backyard Baseball 2001 Scoreboard", baseballScores, true);
+        }
+      }
+
+      if (footballUsers)
         embed.addField("Backyard Football", footballUsers);
     }
 

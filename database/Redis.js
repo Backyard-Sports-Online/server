@@ -131,7 +131,7 @@ class Redis {
             });
         }
 
-        await this.removeOngoingResults(client.userId, client.game);
+        await this.removeOngoingResults(userId, game);
     }
 
     async setIcon(userId, icon) {
