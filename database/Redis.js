@@ -221,10 +221,6 @@ class Redis {
         return ongoingResults;
     }
 
-    async hasOngoingResults(userId, game) {
-        return await this.redis.exists(`byonline:ongoingResults:${game}:${userId}`);
-    }
-
     async removeOngoingResults(userId, game) {
         const resultsKey = `byonline:ongoingResults:${game}:${userId}`;
         if (await this.redis.exists(resultsKey)) {
