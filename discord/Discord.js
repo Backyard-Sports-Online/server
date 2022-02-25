@@ -121,7 +121,7 @@ class Discord {
 
     const embed = new MessageEmbed()
       .setTitle('Server Population:')
-      .setFooter("Updates every minute.")
+      .setFooter("Updates every 30 seconds.")
       .setColor("GREY")
       .setTimestamp();
 
