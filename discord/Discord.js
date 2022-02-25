@@ -31,7 +31,7 @@ class Discord {
       this.populationTimer = setTimeout(async () => {
         await this.sendPopulation();
         this.populationTimer.refresh();
-      }, 60000);
+      }, 30000);
 
     });
 
