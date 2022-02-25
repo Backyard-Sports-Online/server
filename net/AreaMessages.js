@@ -113,6 +113,7 @@ server.handleMessage('game_finished', async (client, args) => {
     await redis.setInGame(client.userId, 0);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
 
+    await redis.removeOngoingResults(client.opponentId, client.game);
     await redis.removeOngoingResults(client.userId, client.game);
 });
 
