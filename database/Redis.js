@@ -130,6 +130,8 @@ class Redis {
                 'opponent': 0
             });
         }
+
+        await this.removeOngoingResults(userId, game);
     }
 
     async setIcon(userId, icon) {
@@ -208,6 +210,22 @@ class Redis {
                       game: game,
                       games: Math.floor(gamesPlaying)
         });
+    }
+
+    async setOngoingResults(userId, game, ongoingResults) {
+        await this.redis.hmset(`byonline:ongoingResults:${game}:${userId}`, ongoingResults);
+    }
+
+    async getOngoingResults(userId, game) {
+        const ongoingResults = await this.redis.hgetall(`byonline:ongoingResults:${game}:${userId}`);
+        return ongoingResults;
+    }
+
+    async removeOngoingResults(userId, game) {
+        const resultsKey = `byonline:ongoingResults:${game}:${userId}`;
+        if (await this.redis.exists(resultsKey)) {
+            await this.redis.del(resultsKey);
+        }
     }
 }
 

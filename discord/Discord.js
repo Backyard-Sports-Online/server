@@ -1,6 +1,7 @@
 "use strict";
 
 const createLogger = require('logging').default;
+const { table, getBorderCharacters } = require('table');
 const { Client, Intents, MessageEmbed } = require('discord.js');
 const { Areas, Groups } = require('../global/Areas.js');
 
@@ -9,6 +10,11 @@ class Discord {
     this.logger = createLogger("Discord");
 
     this.sentOffline = false;
+
+    this.scoreboardTableConfig = {
+      border: getBorderCharacters('ramac'),
+      drawHorizontalLine: (lineIndex, rowCount) => {return lineIndex <= 1 || lineIndex % 2 == 1}
+    };
 
     this.client = new Client({intents: [Intents.FLAGS.GUILDS]});
     this.client.once('ready', async () => {
@@ -40,6 +46,8 @@ class Discord {
     let footballUsers = '';
 
     const userIds = Object.values(await redis.redis.hgetall("byonline:users:nameToId")).map(Number);
+    let ongoingScoresByHome = {};
+    let inGameUserIdsToNames = {};  // Storing so we don't have to call redis for these again later
     for (const userId of userIds) {
       const user = await redis.getUserById(userId);
       if (user === {} || !user.game)
@@ -47,8 +55,49 @@ class Discord {
         continue;
 
       usersOnline++;
-      if (user.inGame)
+      if (user.inGame) {
         gamesPlaying += .5;
+
+        const ongoingResultsStrings = await redis.getOngoingResults(userId, user.game);
+        const ongoingResults = Object.fromEntries(
+          Object.entries(ongoingResultsStrings).map(([k, stat]) => [k, Number(stat)])
+        );
+        if (ongoingResults) {
+          inGameUserIdsToNames[userId] = user.user;
+          if ((ongoingResults.opponentId in ongoingScoresByHome) && (ongoingScoresByHome[ongoingResults.opponentId]["awayId"] == userId)) {
+            // This is the away team; we already have the home team's score for this game
+            ongoingScoresByHome[ongoingResults.opponentId]["awayScore"] = ongoingResults.runs;
+            ongoingScoresByHome[ongoingResults.opponentId]["awayHits"] = ongoingResults.hits;
+            ongoingScoresByHome[ongoingResults.opponentId]["awayErrors"] = ongoingResults.errors;
+            ongoingScoresByHome[ongoingResults.opponentId]["completedInnings"] = ongoingResults.completedInnings;
+          } else if ((userId in ongoingScoresByHome) && ("awayScore" in ongoingScoresByHome[userId])) {
+            // We already have the away team's score for this game. This must be the home team
+            ongoingScoresByHome[userId]["homeScore"] = ongoingResults.runs;
+            ongoingScoresByHome[userId]["homeHits"] = ongoingResults.hits;
+            ongoingScoresByHome[userId]["homeErrors"] = ongoingResults.errors;
+            ongoingScoresByHome[userId]["completedInnings"] = ongoingResults.completedInnings;
+          } else if (ongoingResults.isHome == 1) {
+            // We don't have either team's score yet and this is the home team. Let's add it
+            ongoingScoresByHome[userId] = {
+              "awayId": ongoingResults.opponentId,
+              "homeScore": ongoingResults.runs,
+              "homeHits": ongoingResults.hits,
+              "homeErrors": ongoingResults.errors,
+              "completedInnings": ongoingResults.completedInnings,
+            };
+          } else if (ongoingResults.isHome == 0) {
+            // We don't have either team's score yet and this is the away team. Let's add it
+            ongoingScoresByHome[ongoingResults.opponentId] = {
+              "awayId": userId,
+              "awayScore": ongoingResults.runs,
+              "awayHits": ongoingResults.hits,
+              "awayErrors": ongoingResults.errors,
+              "completedInnings": ongoingResults.completedInnings,
+            };
+          }
+        }
+
+      }
 
       let area = "(Online)";
       let groupName = "";
@@ -80,8 +129,39 @@ class Discord {
       embed.setDescription("No one is currently online. :(");
     else {
       embed.setDescription(`Total Population: ${usersOnline}\nGames Currently Playing: ${Math.floor(gamesPlaying)}`);
-      if (baseballUsers)
+      if (baseballUsers) {
+        let baseballScoresData = [];
+        for (const homeId in ongoingScoresByHome) {
+          baseballScoresData.push(
+            [
+              inGameUserIdsToNames[ongoingScoresByHome[homeId]["awayId"]],
+              ongoingScoresByHome[homeId]["awayScore"],
+              ongoingScoresByHome[homeId]["awayHits"],
+              ongoingScoresByHome[homeId]["awayErrors"],
+              ongoingScoresByHome[homeId]["completedInnings"] + 1,
+            ],
+            [
+              inGameUserIdsToNames[homeId],
+              ongoingScoresByHome[homeId]["homeScore"],
+              ongoingScoresByHome[homeId]["homeHits"],
+              ongoingScoresByHome[homeId]["homeErrors"],
+              "",
+            ]
+          )
+        }
+
         embed.addField("Backyard Baseball 2001", baseballUsers);
+        if (baseballScoresData.length > 0) {
+          const baseballScoreboardText = table(
+            [[ '', 'R', 'H', 'E', 'Inn' ]].concat(baseballScoresData),
+            this.scoreboardTableConfig
+          );
+          embed.addField(
+            "Backyard Baseball 2001 Scoreboard", "```" + baseballScoreboardText + "```"
+          );
+        }
+      }
+
       if (footballUsers)
         embed.addField("Backyard Football", footballUsers);
     }
