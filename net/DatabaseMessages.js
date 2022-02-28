@@ -107,7 +107,7 @@ server.handleMessage('get_profile', async (client, args) => {
         userId = client.userId;
     }
     const user = await redis.getUserById(userId, client.game);
-    if (user === {})
+    if (Object.keys(user).length == 0)
         return;
 
     const profile = [user.icon].concat(user.stats);

@@ -70,7 +70,7 @@ process.on('receive_challenge', async (args) => {
             }
 
             const userData = await redis.getUserById(opponentId);
-            if (userData === {}) {
+            if (Object.keys(userData).length == 0) {
                 logger.error(`Got receive_challenge but our player (${opponentId}) doesn't exist!`);
                 return;
             }

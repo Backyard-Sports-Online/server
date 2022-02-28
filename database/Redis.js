@@ -41,7 +41,7 @@ class Redis {
 
     async getUserById(userId, game) {
         const response = await this.redis.hgetall(`byonline:users:${userId}`);
-        if (response === {}) {
+        if (Object.keys(response).length == 0) {
             this.logger.warn(`User ${userId} not found in Redis!`);
             return {};
         }
@@ -117,7 +117,7 @@ class Redis {
         if (database != this) {
             // We need the name to clear the nameToId from.
             const user = await this.getUserById(userId, game);
-            if (user === {})
+            if (Object.keys(user).length == 0)
                 return;
 
             await this.redis.del(`byonline:users:${userId}`);
@@ -151,7 +151,7 @@ class Redis {
         for (const userId of usersList) {
             const user = await this.getUserById(userId);
             // If the user doesn't exist or in a game, skip them out.
-            if (user === {} || user.inGame)
+            if (Object.keys(user).length == 0 || user.inGame)
                 continue;
             users.push(user);
         }
