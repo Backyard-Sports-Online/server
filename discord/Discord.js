@@ -50,7 +50,7 @@ class Discord {
     let inGameUserIdsToNames = {};  // Storing so we don't have to call redis for these again later
     for (const userId of userIds) {
       const user = await redis.getUserById(userId);
-      if (user === {} || !user.game)
+      if (Object.keys(user).length == 0 || !user.game)
         // Not logged in.
         continue;
 
