@@ -227,6 +227,10 @@ class Redis {
             await this.redis.del(resultsKey);
         }
     }
+
+    async getTeam(userId, game, key) {
+        return {error: 1, message: "Redis API does not support teams"};
+    }
 }
 
 module.exports = Redis;

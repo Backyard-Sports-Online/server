@@ -43,6 +43,18 @@ class WebAPI {
         // Set the icon in the Redis cache.
         redis.setIcon(userId, icon);
     }
+
+    async getTeam(userId, game, key) {
+        const response = await this.post('/get_team', {token: this.token,
+                                                       userId: userId,
+                                                       game: game,
+                                                       key: key});
+        if (response.error) {
+            this.logger.error("Failed to get team!", { response });
+        }
+
+        return response.team;
+    }
 }
 
 module.exports = WebAPI;
