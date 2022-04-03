@@ -183,3 +183,17 @@ server.handleMessage("game_results", async (client, args) => {
     );
     await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });
+
+server.handleMessage('get_teams', async (client, args) => {
+    const userId = client.userId;
+    const opponentId = args.opponent_id;
+    const key = args.key;
+
+    const game = client.game;
+
+    const userTeam = await database.getTeam(userId, game, key);
+    const opponentTeam = await database.getTeam(opponentId, game, key);
+
+    const teams = {user: userTeam, opponent: opponentTeam};
+    client.send("teams", teams);
+});
