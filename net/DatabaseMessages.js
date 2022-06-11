@@ -187,13 +187,27 @@ server.handleMessage("game_results", async (client, args) => {
 server.handleMessage('get_teams', async (client, args) => {
     const userId = client.userId;
     const opponentId = args.opponent_id;
-    const key = args.key;
 
     const game = client.game;
 
-    const userTeam = await database.getTeam(userId, game, key);
-    const opponentTeam = await database.getTeam(opponentId, game, key);
+    const userTeamResponse = await database.getTeam(userId, game);
+    const opponentTeamResponse = await database.getTeam(opponentId, game);
 
-    const teams = {user: userTeam, opponent: opponentTeam};
-    client.send("teams", teams);
+    let userMessages = [];
+    if (userTeamResponse.error) {
+        userMessages.push("User: " + userTeamResponse.message);
+    }
+    if (opponentTeamResponse.error) {
+        userMessages.push("Opponent: " + opponentTeamResponse.message);
+    }
+    if (userMessages.length > 0) {
+        const userErrorMessage = userMessages.join(" ");
+        process.send({cmd: 'kick',
+                      userId: userId,
+                      type: 901,
+                      reason: userErrorMessage});
+    } else {
+        const teams = {user: userTeamResponse.team, opponent: opponentTeamResponse.team};
+        client.send("teams", teams);
+    }
 });
