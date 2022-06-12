@@ -228,7 +228,7 @@ class Redis {
         }
     }
 
-    async getTeam(userId, game, key) {
+    async getTeam(userId, game) {
         return {error: 1, message: "Redis API does not support teams"};
     }
 }

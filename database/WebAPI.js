@@ -44,16 +44,15 @@ class WebAPI {
         redis.setIcon(userId, icon);
     }
 
-    async getTeam(userId, game, key) {
+    async getTeam(userId, game) {
         const response = await this.post('/get_team', {token: this.token,
                                                        userId: userId,
-                                                       game: game,
-                                                       key: key});
+                                                       game: game});
         if (response.error) {
             this.logger.error("Failed to get team!", { response });
         }
 
-        return response.team;
+        return response;
     }
 }
 
