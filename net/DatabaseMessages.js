@@ -201,13 +201,10 @@ server.handleMessage('get_teams', async (client, args) => {
         userMessages.push("Opponent: " + opponentTeamResponse.message);
     }
     if (userMessages.length > 0) {
-        const userErrorMessage = userMessages.join(" ");
-        process.send({cmd: 'kick',
-                      userId: userId,
-                      type: 901,
-                      reason: userErrorMessage});
+        const errorMessage = userMessages.join(" ");
+        client.send("teams", {error: 1, message: errorMessage, user: [], opponent: []});
     } else {
-        const teams = {user: userTeamResponse.team, opponent: opponentTeamResponse.team};
+        const teams = {error: 0, message: "", user: userTeamResponse.team, opponent: opponentTeamResponse.team};
         client.send("teams", teams);
     }
 });
