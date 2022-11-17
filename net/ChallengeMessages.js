@@ -21,6 +21,16 @@ server.handleMessage('set_phone_status', async (client, args) => {
 server.handleMessage('challenge_player', async (client, args) => {
     const userId = args.user;
     const stadium = args.stadium;
+    logger.info(`Challenge player: ${JSON.stringify(
+        {
+            'user': client.userId,
+            'version': args.version || 'v1.0',
+            'game': client.game,
+            'opponent': userId,
+            'area': client.areaId,
+            'stadium': stadium,
+        }
+    )}`);
     if (userId === undefined) {
         logger.error("Missing user argument on challenge_player!");
         return;
@@ -82,6 +92,15 @@ process.on('receive_challenge', async (args) => {
 
 server.handleMessage('challenge_timeout', async (client, args) => {
   const userId = args.user;
+  logger.info(`Challenge timeout: ${JSON.stringify(
+      {
+          'user': client.userId,
+          'version': args.version || 'v1.0',
+          'game': client.game,
+          'opponent': userId,
+          'area': client.areaId,
+      }
+  )}`);
   if (userId === undefined) {
       logger.error("Missing user argument on challenge_timeout!");
       return;
@@ -227,7 +246,16 @@ process.on('considering_challenge', async (args) => {
 
 server.handleMessage('counter_challenge', async (client, args) => {
     const stadium = args.stadium;
-
+    logger.info(`Counter challenge: ${JSON.stringify(
+        {
+            'user': client.userId,
+            'version': args.version || 'v1.0',
+            'opponent': client.opponentId,
+            'game': client.game,
+            'area': client.areaId,
+            'stadium': stadium,
+        }
+    )}`);
     if (stadium === undefined) {
         logger.error("Got counter_challenge but stadium is not defined!");
         return;
@@ -272,6 +300,15 @@ process.on('counter_challenge', async (args) => {
 
 server.handleMessage('decline_challenge', async (client, args) => {
     const userId = args.user;
+    logger.info(`Decline challenge: ${JSON.stringify(
+        {
+            'user': client.userId,
+            'version': args.version || 'v1.0',
+            'opponent': userId,
+            'game': client.game,
+            'area': client.areaId,
+        }
+    )}`);
 
     if (userId === undefined) {
         logger.error("Missing user argument on decline_challenge!");
@@ -321,6 +358,15 @@ process.on('decline_challenge', async (args) => {
 
 server.handleMessage('accept_challenge', async (client, args) => {
     const userId = args.user;
+    logger.info(`Accept challenge: ${JSON.stringify(
+        {
+            'user': client.userId,
+            'version': args.version || 'v1.0',
+            'opponent': userId,
+            'game': client.game,
+            'area': client.areaId,
+        }
+    )}`);
 
     if (userId === undefined) {
         logger.error("Missing user argument on accept_challenge!");
