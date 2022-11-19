@@ -24,6 +24,7 @@ server.handleMessage('challenge_player', async (client, args) => {
     const challengeUserId = args.user;
     const stadium = args.stadium;
     logEvent('challenge_player', client, args.version, {'area': client.areaId, 'opponent': challengeUserId, 'stadium': stadium});
+
     if (challengeUserId === undefined) {
         logger.error("Missing user argument on challenge_player!");
         return;
