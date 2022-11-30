@@ -4,6 +4,7 @@ const logger = createLogger('DatabaseMessages');
 
 const Areas = require('../global/Areas.js');
 const Stats = require('../global/Stats.js');
+const logEvent = require('../global/EventLogger.js').logEvent;
 
 server.handleMessage("login", async (client, args) => {
     const username = args.user;
@@ -74,6 +75,8 @@ server.handleMessage("login_token", async (client, args) => {
     client.game = game;
 
     const user = await database.getUserWithToken(token, game);
+    logEvent('login_token', client, args.version, {'user': user.id, 'username': user.user, 'game': game});
+
     if (user.error) {
         client.send("login_resp", {error_code: user.error,
                                    id: 0,
@@ -116,6 +119,8 @@ server.handleMessage('get_profile', async (client, args) => {
 
 server.handleMessage('set_icon', async (client, args) => {
     const icon = args.icon;
+    logEvent('set_icon', client, args.version, {'icon': icon});
+
     if (client.userId == 0) {
         client.kick("Attempting to set icon without logging in first.");
         return;
@@ -181,6 +186,8 @@ server.handleMessage("game_results", async (client, args) => {
     const ongoingResults = Stats.ResultsMappers[client.game](
         resultsFields, isHome, opponentId
     );
+    logEvent('game_results', client, args.version, {'results': ongoingResults});
+
     await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });
 
@@ -192,6 +199,8 @@ server.handleMessage('get_teams', async (client, args) => {
 
     const userTeamResponse = await database.getTeam(userId, game);
     const opponentTeamResponse = await database.getTeam(opponentId, game);
+
+    logEvent('get_teams', client, args.version, {'userTeam': userTeamResponse, 'opponentTeam': opponentTeamResponse});
 
     let userMessages = [];
     if (userTeamResponse.error) {

@@ -2,6 +2,8 @@
 const createLogger = require('logging').default;
 const logger = createLogger('ChallengeMessages');
 
+const logEvent = require('../global/EventLogger.js').logEvent;
+
 // Hack for baseball
 const busyTimeouts = {};
 
@@ -19,9 +21,11 @@ server.handleMessage('set_phone_status', async (client, args) => {
 });
 
 server.handleMessage('challenge_player', async (client, args) => {
-    const userId = args.user;
+    const challengeUserId = args.user;
     const stadium = args.stadium;
-    if (userId === undefined) {
+    logEvent('challenge_player', client, args.version, {'area': client.areaId, 'opponent': challengeUserId, 'stadium': stadium});
+
+    if (challengeUserId === undefined) {
         logger.error("Missing user argument on challenge_player!");
         return;
     } else if (stadium === undefined) {
@@ -34,8 +38,8 @@ server.handleMessage('challenge_player', async (client, args) => {
 
     // Check if the opponent is in our area.
     const users = await redis.getUserIdsInArea(client.areaId, client.game);
-    if (!users.includes(userId)) {
-        logger.error(`Got challenge_player but our player (${userId}) isn't in area (${client.areaId})!`);
+    if (!users.includes(challengeUserId)) {
+        logger.error(`Got challenge_player but our player (${challengeUserId}) isn't in area (${client.areaId})!`);
         return;
     }
 
@@ -43,7 +47,7 @@ server.handleMessage('challenge_player', async (client, args) => {
         clearTimeout(busyTimeouts[client.userId]);
     }
 
-    process.send({cmd: "receive_challenge", user: userId,
+    process.send({cmd: "receive_challenge", user: challengeUserId,
                                             opponent: client.userId,
                                             stadium: stadium});
 });
@@ -81,8 +85,9 @@ process.on('receive_challenge', async (args) => {
 });
 
 server.handleMessage('challenge_timeout', async (client, args) => {
-  const userId = args.user;
-  if (userId === undefined) {
+  const challengeUserId = args.user;
+  logEvent('challenge_timeout', client, args.version, {'area': client.areaId, 'opponent': challengeUserId});
+  if (challengeUserId === undefined) {
       logger.error("Missing user argument on challenge_timeout!");
       return;
   } else if (client.areaId == 0) {
@@ -92,12 +97,12 @@ server.handleMessage('challenge_timeout', async (client, args) => {
 
   // Check if the opponent is in our area.
   const users = await redis.getUserIdsInArea(client.areaId, client.game);
-  if (!users.includes(userId)) {
-      logger.error(`Got challenge_timeout but our player (${userId}) isn't in area (${client.areaId})!`);
+  if (!users.includes(challengeUserId)) {
+      logger.error(`Got challenge_timeout but our player (${challengeUserId}) isn't in area (${client.areaId})!`);
       return;
   }
 
-  process.send({cmd: "challenge_timeout", user: userId,
+  process.send({cmd: "challenge_timeout", user: challengeUserId,
                                           opponent: client.userId});
 });
 
@@ -227,6 +232,7 @@ process.on('considering_challenge', async (args) => {
 
 server.handleMessage('counter_challenge', async (client, args) => {
     const stadium = args.stadium;
+    logEvent('counter_challenge', client, args.version, {'area': client.areaId, 'opponent': client.opponentId, 'stadium': stadium});
 
     if (stadium === undefined) {
         logger.error("Got counter_challenge but stadium is not defined!");
@@ -271,9 +277,10 @@ process.on('counter_challenge', async (args) => {
 });
 
 server.handleMessage('decline_challenge', async (client, args) => {
-    const userId = args.user;
+    const challengeUserId = args.user;
+    logEvent('decline_challenge', client, args.version, {'area': client.areaId, 'opponent': challengeUserId});
 
-    if (userId === undefined) {
+    if (challengeUserId === undefined) {
         logger.error("Missing user argument on decline_challenge!");
         return;
     } else if (client.areaId == 0) {
@@ -283,13 +290,13 @@ server.handleMessage('decline_challenge', async (client, args) => {
 
     // Check if the opponent is in our area.
     const users = await redis.getUserIdsInArea(client.areaId, client.game);
-    if (!users.includes(userId)) {
-        logger.error(`Got decline_challenge but our player (${userId}) isn't in area (${client.areaId})!`);
+    if (!users.includes(challengeUserId)) {
+        logger.error(`Got decline_challenge but our player (${challengeUserId}) isn't in area (${client.areaId})!`);
         return;
     }
 
     client.opponentId = 0;
-    process.send({cmd: 'decline_challenge', user: userId,
+    process.send({cmd: 'decline_challenge', user: challengeUserId,
                                             opponent: client.userId,
                                             not_responding: 0});
 });
@@ -320,9 +327,10 @@ process.on('decline_challenge', async (args) => {
 });
 
 server.handleMessage('accept_challenge', async (client, args) => {
-    const userId = args.user;
+    const challengeUserId = args.user;
+    logEvent('accept_challenge', client, args.version, {'area': client.areaId, 'opponent': challengeUserId});
 
-    if (userId === undefined) {
+    if (challengeUserId === undefined) {
         logger.error("Missing user argument on accept_challenge!");
         return;
     } else if (client.areaId == 0) {
@@ -332,13 +340,13 @@ server.handleMessage('accept_challenge', async (client, args) => {
 
     // Check if the opponent is in our area.
     const users = await redis.getUserIdsInArea(client.areaId, client.game);
-    if (!users.includes(userId)) {
-        logger.error(`Got accept_challenge but our player (${userId}) isn't in area (${client.areaId})!`);
+    if (!users.includes(challengeUserId)) {
+        logger.error(`Got accept_challenge but our player (${challengeUserId}) isn't in area (${client.areaId})!`);
         return;
     }
 
-    client.opponentId = userId;
-    process.send({cmd: 'accept_challenge', user: userId,
+    client.opponentId = challengeUserId;
+    process.send({cmd: 'accept_challenge', user: challengeUserId,
                                            opponent: client.userId});
 });
 

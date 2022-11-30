@@ -3,6 +3,7 @@ const createLogger = require('logging').default;
 const logger = createLogger('AreaMessages');
 
 const Areas = require('../global/Areas.js');
+const logEvent = require('../global/EventLogger.js').logEvent;
 
 server.handleMessage('get_population', async (client, args) => {
     const areaId = args.area;
@@ -26,6 +27,7 @@ server.handleMessage('get_population', async (client, args) => {
 
 server.handleMessage('enter_area', async (client, args) => {
     const areaId = args.area;
+    logEvent('enter_area', client, args.version, {'area': areaId});
     if (areaId === undefined) {
         logger.warn('Got enter_area message without area id!  Ignoring.');
         return;
@@ -39,6 +41,7 @@ server.handleMessage('enter_area', async (client, args) => {
 });
 
 server.handleMessage('leave_area', async (client, args) => {
+    logEvent('leave_area', client, args.version, {'area': client.areaId});
     if (!client.areaId) {
         // this.logger.error("Got leave_area without being in an area!");
         return;
@@ -98,6 +101,7 @@ process.on('update_players_list', (args) => {
 
 server.handleMessage('game_started', async (client, args) => {
     const playerId = args.user;
+    logEvent('game_started', client, args.version, {'area': client.areaId, 'opponent': playerId});
 
     await redis.setInGame(client.userId, 1);
     await redis.setInGame(playerId, 1);
@@ -110,6 +114,7 @@ server.handleMessage('game_started', async (client, args) => {
 });
 
 server.handleMessage('game_finished', async (client, args) => {
+    logEvent('game_finished', client, args.version, {'area': client.areaId, 'opponent': client.opponentId});
     await redis.setInGame(client.userId, 0);
     await redis.sendGamesPlayingInArea(client.areaId, client.game);
 

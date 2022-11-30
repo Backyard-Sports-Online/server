@@ -1,6 +1,13 @@
+"use strict";
+const createLogger = require('logging').default;
+const logger = createLogger('SessionMessages');
+
+const logEvent = require('../global/EventLogger.js').logEvent;
+
 server.handleMessage('send_session', async (client, args) => {
     const userId = args.user;
     const sessionId = args.session;
+    logEvent('send_session', client, args.version, {'session': sessionId, 'opponent': userId});
 
     if (userId === undefined) {
         logger.error("Missing user argument on send_session!");
@@ -49,6 +56,7 @@ process.on('game_session', async (args) => {
 server.handleMessage('send_relay', async (client, args) => {
     const userId = args.user;
     const relayId = args.relay;
+    logEvent('send_relay', client, args.version, {'relay': relayId, 'opponent': userId});
 
     if (userId === undefined) {
         logger.error("Missing user argument on send_relay!");
