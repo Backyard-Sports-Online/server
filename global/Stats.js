@@ -9,7 +9,7 @@ const ResultsMappers = {
             runs: resultsFields[1],
             atBats: resultsFields[2],
             hits: resultsFields[3],
-            errors: resultsFields[4],
+            homeRuns: resultsFields[4],
             longestHomeRun: resultsFields[5],
             singles: resultsFields[6],
             doubles: resultsFields[7],
