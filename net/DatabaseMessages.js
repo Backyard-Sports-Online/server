@@ -186,7 +186,7 @@ server.handleMessage("game_results", async (client, args) => {
     const ongoingResults = Stats.ResultsMappers[client.game](
         resultsFields, isHome, opponentId
     );
-    logEvent('game_results', client, args.version, {'results': ongoingResults});
+    logEvent('game_results', client, args.version, {'results': ongoingResults, 'rawResults': resultsFields});
 
     await redis.setOngoingResults(resultsUserId, client.game, ongoingResults);
 });
