@@ -231,6 +231,10 @@ class Redis {
     async getTeam(userId, game) {
         return {error: 1, message: "Redis API does not support teams"};
     }
+
+    async getFileContent(filename, userId, game) {
+        return {error: 1, message: "Redis API does not support downloading files"};
+    }
 }
 
 module.exports = Redis;

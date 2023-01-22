@@ -54,6 +54,18 @@ class WebAPI {
 
         return response;
     }
+
+    async getFileContent(filename, userId, game) {
+        const fileDesc = filename.split(".")[0];
+        const getFileUrl = `/file_content/${fileDesc}`;
+        const response = await this.get(getFileUrl, {token: this.token, userId: userId, game: game});
+
+        if (response.error) {
+            this.logger.error("Failed to get file content!", { response });
+        }
+
+        return response;
+    }
 }
 
 module.exports = WebAPI;

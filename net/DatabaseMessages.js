@@ -217,3 +217,26 @@ server.handleMessage('get_teams', async (client, args) => {
         client.send("teams", teams);
     }
 });
+
+server.handleMessage('download_file', async (client, args) => {
+    const userId = client.userId;
+    const game = client.game;
+    const filename = args.filename;
+
+    const fileContentResponse = await database.getFileContent(filename, userId, game);
+    logEvent('download_file', client, args.version, {'fileContentResponse': fileContentResponse});
+
+    if (fileContentResponse.error) {
+        client.send(
+            "file",
+            {
+                error: fileContentResponse.error,
+                message: fileContentResponse.message,
+                filename: filename,
+                content: "",
+            }
+        );
+    } else {
+        client.send("file", {error: 0, message: "", filename: filename, content: fileContentResponse.content});
+    }
+});
