@@ -2,6 +2,8 @@
 
 Lobby server code for Backyard Sports Online
 
+This repository has been deprecated and all development has been moved to [ScummVM's scummvm-site repository](https://github.com/scummvm/scummvm-sites/tree/multiplayer/lobby). 
+
 ## Using docker-compose to deploy the server locally
 Run the following to launch the server and a redis instance for it to use:
 ```
